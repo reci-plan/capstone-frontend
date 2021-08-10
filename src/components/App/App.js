@@ -14,6 +14,8 @@ import apiClient from "../../services/apiClient";
 import PublicProfile from "../PublicProfile/PublicProfile";
 import Generator from "../Generator/Generator";
 import SearchFilter from "../SearchFilter/SearchFilter";
+import FilterResults from "../SearchFilter/FilterResults/FilterResults";
+import ProfileResults from "../ProfileResults/ProfileResults";
 // import Community from "../Community/Community";
 // import CommunityEdit from "../CommunityEdit/CommunityEdit";
 import AboutUs from "../About/About";
@@ -28,25 +30,13 @@ function App() {
   const [searchTerm, setSearchTerm] = useState("");
   const [recipes, setRecipes] = useState([]);
   const [profile, setProfile] = useState({});
-  const [flavors, setFlavors] = useState([]);
+  const [allProfiles, setAllProfiles] = useState([]);
   const [saved, setSaved] = useState([]);
   const [changeSave, setChangeSave] = useState(false);
 
-  const allFlavors = [
-    "spicy",
-    "salty",
-    "sweet",
-    "sour",
-    "bitter",
-    "savory",
-    "fatty",
-  ];
-
-  // const [recipes, setRecipes] = useState({})
-
   const [{ colors }, dispatch] = useDataLayerValue();
 
-  console.log("On App.js component, colors is: ", colors);
+  // console.log("On App.js component, colors is: ", colors);
 
   // Remain logged in
   useEffect(() => {
@@ -93,24 +83,33 @@ function App() {
       const { data, error } = await apiClient.fetchProfile();
       if (data) {
         setProfile(data);
-        if (data.fav_flavors) {
-          var flavors = [];
-          data.fav_flavors.split("").forEach((c) => {
-            let num = Number(c);
-            var obj = { flavor: allFlavors[num], id: c };
-            flavors.push(obj);
-          });
-          setFlavors(flavors);
-        } else {
-          setFlavors([]);
-        }
       }
       if (error) {
         console.log(error, "Profile.js");
       }
     };
 
-    fetchProfile();
+    if (user.email) {
+      fetchProfile();
+    }
+  }, [user]);
+
+
+  // Fetch all users & profiles
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const { data, error } = await apiClient.fetchAllProfiles();
+      if (data) {
+        setAllProfiles(data);
+      }
+      if (error) {
+        console.log(error, "ProfileResults.js");
+      }
+    };
+
+    if (user.email) {
+      fetchProfile();
+    }
   }, [user]);
 
   // Fetch saved recipes
@@ -125,7 +124,10 @@ function App() {
         console.log(error, "fetch saved recipes");
       }
     };
-    fetchRecipes();
+
+    if (user.email) {
+      fetchRecipes();
+    }
   }, [user, changeSave]);
 
   // Handle save recipe
@@ -166,7 +168,6 @@ function App() {
         <Navbar
           user={user}
           setUser={setUser}
-          searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
         />
         <Routes>
@@ -194,12 +195,6 @@ function App() {
             element={<IndividualRecipe user={user} />}
           />
 
-          {/*Fix this route later*/}
-          <Route
-            path="/search/recipes/:recipeId"
-            element={<IndividualRecipe user={user} />}
-          />
-
           <Route 
             path="/wheel" 
             element={<Generator user={user}/>}
@@ -208,7 +203,18 @@ function App() {
           <Route
             path="/profile"
             element={
-              <Profile user={user} profile={profile} flavors={flavors} />
+              <Profile 
+                user={user} 
+              />
+            }
+          />
+
+          <Route
+            path="/profile/:username"
+            element={
+              <Profile 
+                user={user}
+              />
             }
           />
 
@@ -219,7 +225,17 @@ function App() {
                 user={user}
                 handleUpdateUser={handleUpdateUser}
                 profile={profile}
-                flavors={flavors}
+              />
+            }
+          />
+
+          <Route 
+            path="/profileResults"
+            element={
+              <ProfileResults
+                user={user}
+                profile={profile}
+                allProfiles={allProfiles}
               />
             }
           />
@@ -245,6 +261,15 @@ function App() {
             path="/search"
             element={
               <SearchFilter
+                user={user}
+              />
+            }
+          />
+
+          <Route
+            path="/search/:categoryType"
+            element={
+              <FilterResults
                 user={user}
                 recipes={recipes}
                 handleSave={handleSave}

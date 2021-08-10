@@ -6,6 +6,7 @@ import heart from "../../assets/heart.svg";
 import heartFill from "../../assets/heart-fill.svg";
 import budgetIcon from "../../assets/budget-icon.svg";
 import timeIcon from "../../assets/time-icon.svg";
+import ratingIcon from "../../assets/rating-icon.svg";
 
 import apiClient from "../../services/apiClient";
 
@@ -34,7 +35,9 @@ export default function RecipeCard({
       }
     };
 
-    checkRecipe();
+    if (user.email) {
+      checkRecipe();
+    }
   }, [recipeInfo]);
 
   const limit = 17;
@@ -64,17 +67,21 @@ export default function RecipeCard({
         </div>
         <div className="card-tips">
           <img src={budgetIcon} alt="Money sign"></img>
-          <span> Budget ($) : {recipeInfo.expense}</span>
+          <span> Budget ($/serv): {recipeInfo.expense/100}</span>
         </div>
         <div className="card-tips">
           <img src={timeIcon} alt="Time sign"></img>
-          <span>Time (min) : {recipeInfo.prep_time}</span>
+          <span>Total time (min): {recipeInfo.prep_time}</span>
+        </div>
+        <div className="card-tips">
+          <img src={ratingIcon} alt="Rating sign"></img>
+          <span>Rating: {parseFloat(recipeInfo.rating/20)}/5</span>
         </div>
       </div>
       {links ? 
         <>
         <div className="card-links">
-          <Link to={`recipes/${recipeInfo.api_id}`}>View more &#8594;</Link>
+          <Link to={`/recipes/${recipeInfo.api_id}`}>View more &#8594;</Link>
           <button
             className="save-btn"
             onClick={handleOnClick}
