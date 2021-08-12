@@ -13,16 +13,23 @@ import apiClient from "../../services/apiClient";
 export default function RecipeCard({
   user,
   recipeInfo,
+  meal,
   handleSave,
   handleUnsave,
-  handleLinks
+  handleLinks,
+  dontDisplaySave,
+  handleLikes,
+  handleMealInfo,
 }) {
   const [saved, setSaved] = useState(false);
   const [links, setLinks] = useState(true);
 
+  const [likes, setLikes] = useState(true);
+  const [mealInfo, setMealInfo] = useState(true);
+
   useEffect(() => {
     const checkRecipe = async () => {
-      const { data, error } = await apiClient.checkSavedRecipe(recipeInfo.id);
+      const { data, error } = await apiClient.checkSavedRecipe(recipeInfo?.id);
       if (data) {
         setSaved(data);
       }
@@ -31,14 +38,20 @@ export default function RecipeCard({
         console.log("Check saved recipe error.......RecipeCard.js");
       }
       if (handleLinks === false) {
-        setLinks(false)
+        setLinks(false);
+      }
+      if (handleLikes === false) {
+        setLikes(false);
+      }
+      if (handleMealInfo === false) {
+        setMealInfo(false);
       }
     };
 
     if (user.email) {
       checkRecipe();
     }
-  }, [recipeInfo]);
+  }, [recipeInfo, handleLinks, handleLikes, handleMealInfo]);
 
   const limit = 17;
 
@@ -56,47 +69,71 @@ export default function RecipeCard({
 
   return (
     <div className="RecipeCard">
-      <div className="card-img">
-        <img src={recipeInfo.image_url} alt={recipeInfo.title}></img>
-      </div>
-      <div className="card-info">
-        <div className="card-title">
-          {recipeInfo.title.length > limit
-            ? recipeInfo.title.substring(0, limit) + "..."
-            : recipeInfo.title}
+      <Link to={`/recipes/${recipeInfo?.api_id}`}>
+        <div className="card-img">
+          <img src={recipeInfo?.image_url} alt={recipeInfo?.title}></img>
         </div>
+      </Link>
+      <div className="card-info">
+        <Link to={`/recipes/${recipeInfo?.api_id}`}>
+          <div className="card-title">
+            {recipeInfo?.title.length > limit
+              ? recipeInfo?.title.substring(0, limit) + "..."
+              : recipeInfo?.title}
+          </div>
+        </Link>
         <div className="card-tips">
           <img src={budgetIcon} alt="Money sign"></img>
-          <span> Budget ($/serv): {recipeInfo.expense/100}</span>
+          <span>Budget ($/serv): {recipeInfo?.expense / 100}</span>
         </div>
         <div className="card-tips">
           <img src={timeIcon} alt="Time sign"></img>
-          <span>Total time (min): {recipeInfo.prep_time}</span>
+          <span>Total time (min): {recipeInfo?.prep_time}</span>
         </div>
         <div className="card-tips">
           <img src={ratingIcon} alt="Rating sign"></img>
-          <span>Rating: {parseFloat(recipeInfo.rating/20)}/5</span>
+          <span>Rating: {parseFloat(recipeInfo?.rating / 20)}/5</span>
         </div>
       </div>
-      {links ? 
-        <>
-        <div className="card-links">
-          <Link to={`/recipes/${recipeInfo.api_id}`}>View more &#8594;</Link>
-          <button
-            className="save-btn"
-            onClick={handleOnClick}
-          >
-            {saved ? (
-              <img src={heartFill} alt="Solid Heart to unsave recipe"></img>
+
+      <div className="card-links">
+        {links ? (
+          <>
+            <Link to={`/recipes/${recipeInfo?.api_id}`}>View more &#8594;</Link>
+          </>
+        ) : (
+          ""
+        )}
+
+        {likes ? (
+          <>
+            {!dontDisplaySave ? (
+              <button className="save-btn" onClick={handleOnClick}>
+                {saved ? (
+                  <img src={heartFill} alt="Solid Heart to unsave recipe"></img>
+                ) : (
+                  <img src={heart} alt="Heart to save recipe"></img>
+                )}
+              </button>
             ) : (
-              <img src={heart} alt="Heart to save recipe"></img>
+              ""
             )}
-          </button>
-        </div>
-        </>
-        :
-        ""
-      }
+          </>
+        ) : (
+          ""
+        )}
+      </div>
+      <div className="mealInfo">
+        {meal ? (
+          <>
+            <p>{meal[0]}</p>
+            &nbsp;
+            <p>{meal[1]}</p>
+          </>
+        ) : (
+          ""
+        )}
+      </div>
     </div>
   );
 }

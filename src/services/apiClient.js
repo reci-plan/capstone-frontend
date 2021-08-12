@@ -58,6 +58,13 @@ class ApiCalls {
         return await this.request({ endpoint: `auth/user`, method: `GET` });
     }
 
+    async fetchUserById(userId) {
+        return await this.request({
+            endpoint: `auth/fetchCustomUser/${userId}`,
+            method: `GET`,
+        });
+    }
+
     async logout() {
         this.setToken(null);
         localStorage.setItem(this.tokenName, "");
@@ -195,6 +202,7 @@ class ApiCalls {
     async fetchLocalDbRecipe(recipeId) {
         return await this.request({
             endpoint: `search/id/${recipeId}`,
+            method: `GET`
         });
     }
 
@@ -234,6 +242,13 @@ class ApiCalls {
     async getPublicUserInformation(user_id) {
         return await this.request({
             endpoint: `profile/getProfile/${user_id}`,
+            method: `GET`,
+        });
+    }
+
+    async getProfileFromUserId(user_id) {
+        return await this.request({
+            endpoint: `profile/getProfileFromUserId/${user_id}`,
             method: `GET`,
         });
     }
@@ -283,6 +298,22 @@ class ApiCalls {
             method: `POST`,
             data: mealPlan,
         });
+    }
+
+    async unsavePlan(mealPlan) {
+        return await this.request({
+            endpoint: `save/mealPlan`,
+            method: `DELETE`,
+            data: mealPlan,
+        });
+    }
+
+    async fetchSavedMealPlans() {
+        return await this.request({ endpoint: `save/mealPlans`, method: `GET` });
+    }
+
+    async fetchSavedMealPlan(planId) {
+        return await this.request({ endpoint: `save/mealPlan/${planId}`, method: `GET` });
     }
 }
 

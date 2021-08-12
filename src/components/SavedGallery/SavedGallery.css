@@ -5,6 +5,32 @@
   background-size: 100%;
 }
 
+.section-title {
+  font-size: 30px;
+  font-family: 'Lato';
+  font-weight: 500;
+  padding: 10px 0 10px 0px;
+}
+
+.plan-title {
+  font-size: 20px;
+  font-family: 'Lato';
+}
+
+.saveRow {
+  display: flex;
+  flex-direction: row;
+}
+
+.mealPlan {
+  margin: 10px 0px;
+}
+
+.mealInfo {
+  justify-content: center;
+  font-family: 'Lato';
+  font-size: 20px;
+}
 
 @media only screen and (max-width: 700px) {
   .SavedGallery {

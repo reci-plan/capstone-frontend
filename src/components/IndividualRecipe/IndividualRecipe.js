@@ -13,15 +13,13 @@ import {
 import green from "@material-ui/core/colors/green";
 
 import apiClient from "../../services/apiClient";
-import veganIcon from "../../assets/vegan-icon.svg";
-import vegetarianIcon from "../../assets/vegetarian-icon.svg";
-import dairyfreeIcon from "../../assets/dairyfree-icon.svg";
-import glutenfreeIcon from "../../assets/glutenfree-icon.svg";
+import navbar from "../../assets/navbar.jpg";
 import "./IndividualRecipe.css";
 
 import Comment from "../Comment/Comment";
 import useReadjustTextareaHeight from "./useReadjustTextareaHeight";
 import SocialMediaShare from "./SocialMediaShare/SocialMediaShare";
+import SampleLayout from "./SampleLayout";
 
 // convert string to array, the str is in format of:
 // Number + "[" + ingrdients + "]"
@@ -47,7 +45,34 @@ const stringToArray = (str, setState) => {
   }
 };
 
-export default function IndividualRecipe({ user }) {
+const getCalories = (str) => {
+  // search for "calories" in the str
+  // minus one to not count the space at the end of the number, this is our index
+  let j = str.search(" calories") - 1;
+
+  // if calories not found in the string
+  if (j === -1) {
+    return "calories not found";
+  }
+
+  // keep going through the string backwards until we finish retrieving calories amount
+  let calories_amount = "";
+  while (j >= 0 && str[j] !== ">") {
+    calories_amount += str[j];
+    j -= 1;
+  }
+
+  // gotta reverse it , its backwards right now
+  // turn to list, reverse the list, join back to string
+  return calories_amount.split("").reverse().join("");
+};
+
+export default function IndividualRecipe({
+  user,
+  recipes,
+  handleSave,
+  handleUnsave,
+}) {
   // console.log(user);
   const { recipeId } = useParams();
   const [recipeInstructions, setRecipeInstructions] = useState([]);
@@ -71,6 +96,8 @@ export default function IndividualRecipe({ user }) {
   // loading gif, when api is still fetching data
   const [isLoading, setIsLoading] = useState(false);
 
+  const [userProfileImg, setUserProfileImg] = useState("");
+
   // comment box
   const INITIAL_HEIGHT = 75;
   const [isExpanded, setIsExpanded] = useState(false);
@@ -90,6 +117,11 @@ export default function IndividualRecipe({ user }) {
     setComment("");
     setIsExpanded(false);
   };
+
+  useEffect(() => {
+    setRecipeIngredients([]);
+    setRecipeInstructions([]);
+  }, [recipeId]);
 
   // Method 1:
 
@@ -139,10 +171,11 @@ export default function IndividualRecipe({ user }) {
         setRecipeInfo(data);
         setExtraInformation({
           ingredients: data.ingredients.split("[").length - 1,
-          healthScore: "healthScore",
+          rating: data.rating,
           readyInMinutes: data.prep_time,
-          servings: "servings",
+          servings: data.servings,
           pricePerServing: data.expense / 100,
+          calories: getCalories(data.description),
         });
       }
 
@@ -178,24 +211,30 @@ export default function IndividualRecipe({ user }) {
   // When user post new comment
 
   const handleSubmit = async (e) => {
+    setIsExpanded(false);
     e.preventDefault();
     const { data, error } = await apiClient.postComment({ comment }, recipeId);
     if (data) {
       console.log("data.publishComment: >>>>>>>>> ", data.publishComment);
-      const published_comment_with_zero_likes = {
-        ...data.publishComment,
-        amount: 0,
-      };
-      setCurComments((prevState) => [
-        published_comment_with_zero_likes,
-        ...prevState,
-      ]);
+      setCurComments((prevState) => [data.publishComment, ...prevState]);
     }
     if (error) {
       alert(error);
     }
     setComment("");
   };
+
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (user) {
+        const { data, error } = await apiClient.getProfileFromUserId(user?.id);
+        if (data) {
+          setUserProfileImg(data.image_url);
+        }
+      }
+    };
+    fetchUserProfile();
+  }, [user?.id]);
 
   const handleTextAreaChange = (e) => {
     setComment(e.target.value);
@@ -231,207 +270,34 @@ export default function IndividualRecipe({ user }) {
     "pricePerServing",
   ];
 
-  console.log(recipeInfo);
-  console.log(recipeInfo.description);
   return (
-    <>
-      <div>
+    <div
+      className="IndividualRecipe"
+      style={{ backgroundImage: `url(${navbar})` }}
+    >
+      <div className="IndividualRecipeWrapper">
+        <div>
+          <SampleLayout
+            recipeInfo={recipeInfo}
+            recipeIngredients={recipeIngredients}
+            recipeInstructions={recipeInstructions}
+            EXTRA_INFO_ARRAY={EXTRA_INFO_ARRAY}
+            extraInformation={extraInformation}
+            recipes={recipes}
+            handleSave={handleSave}
+            handleUnsave={handleUnsave}
+            user={user}
+          />
+        </div>
+        <div style={{ marginTop: "300px" }}> </div>
         <div
           className="IndividualRecipe"
-          // style={isLoading ? { filter: "blur(2px)" } : {}}
+          style={isLoading ? { filter: "blur(2px)" } : {}}
         >
-          <div className="recipe-top">
-            <div className="recipe-title">{recipeInfo.title}</div>
-            <div className="recipe-diet">
-              {recipeInfo.vegan ? (
-                <img src={veganIcon} alt="Vegan Icon"></img>
-              ) : null}
-              {recipeInfo.vegetarian ? (
-                <img src={vegetarianIcon} alt="Vegetarian Icon"></img>
-              ) : null}
-              {recipeInfo.dairyfree ? (
-                <img src={dairyfreeIcon} alt="Dairy Free Icon"></img>
-              ) : null}
-              {recipeInfo.glutenfree ? (
-                <img src={glutenfreeIcon} alt="Gluten Free Icon"></img>
-              ) : null}
-            </div>
-          </div>
-          {/*This is where the additional info go. E.g: ready in minutes, calories, etc*/}
-          <div className="recipe-additional-info">
-            {EXTRA_INFO_ARRAY.map((r, i) => (
-              <>
-                <MuiThemeProvider theme={additionalInfoTheme}>
-                  <Paper
-                    elevation={3}
-                    className={classes.paper}
-                    style={{ minWidth: "280px" }}
-                  >
-                    {isLoading ? (
-                      <Typography
-                        variant="h4"
-                        color={i % 2 == 0 ? "primary" : "secondary"}
-                        gutterBottom
-                        className="boxGrayBig"
-                      ></Typography>
-                    ) : (
-                      <Typography
-                        variant="h4"
-                        color={i % 2 == 0 ? "primary" : "secondary"}
-                        gutterBottom
-                      >
-                        {EXTRA_INFO_ARRAY[i]}
-                      </Typography>
-                    )}
-
-                    {isLoading ? (
-                      <Typography
-                        variant="body1"
-                        color={i % 2 == 0 ? "secondary" : "primary"}
-                        className={`${isLoading} ? boxGraySmall : ""`}
-                      ></Typography>
-                    ) : (
-                      <Typography
-                        variant="body1"
-                        color={i % 2 == 0 ? "secondary" : "primary"}
-                      >
-                        {extraInformation[EXTRA_INFO_ARRAY[i]]}
-                      </Typography>
-                    )}
-                  </Paper>
-                  <br />
-                </MuiThemeProvider>
-              </>
-            ))}
-          </div>
-          <div className="recipe-display">
-            {/* Left Side */}
-            <div className="recipe-left">
-              <div className="recipe-img">
-                {isLoading ? (
-                  <div className="imagePlaceholder">
-                    <CircularProgress
-                      color="primary"
-                      style={{
-                        position: "absolute",
-                        left: "50%",
-                        top: "50%",
-                        transform: "translate(-50%, -50%)",
-                      }}
-                    />
-                  </div>
-                ) : (
-                  <img src={recipeInfo.image_url} alt={recipeInfo.title}></img>
-                )}
-              </div>
-              <div className="recipe-ingre">
-                <div className="heading">Ingredients</div>
-                {recipeIngredients.length > 0
-                  ? recipeIngredients.map((element, idx) => (
-                      <div key={idx}>{element} </div>
-                    ))
-                  : null}
-              </div>
-            </div>
-
-            {/* Right Side */}
-            <div className="recipe-right">
-              <div className="heading">Instructions</div>
-              {isLoading
-                ? [...Array(5)].map((x) => (
-                    <>
-                      <Paper
-                        elevation={3}
-                        className={classes.paper}
-                        style={{ minWidth: "280px" }}
-                      >
-                        <Typography
-                          variant="body1"
-                          className={`${isLoading} ? boxGrayDescription : ""`}
-                        ></Typography>
-                      </Paper>
-                      <br />
-                    </>
-                  ))
-                : recipeInstructions.length > 0
-                ? recipeInstructions.map((element, idx) => (
-                    <>
-                      <Paper
-                        key={idx}
-                        id={`${element.idx}`}
-                        elevation={3}
-                        // style={{
-                        //   backgroundColor:
-                        //     "#a7d2c5" && numPicked === element.number,
-                        // }}
-                      >
-                        <Typography
-                          variant="h6"
-                          className={`${classes.paper} ${
-                            numPicked === idx ? "active" : ""
-                          }`}
-                        >
-                          {idx + 1}. {element}
-                        </Typography>
-                      </Paper>
-                      <br />
-                    </>
-                  ))
-                : null}
-            </div>
-
-            <SocialMediaShare recipeInfo={recipeInfo} />
-            <div className="heading">Steps</div>
-            <div className="steps_div">
-              {isLoading
-                ? [...Array(5)].map((x) => (
-                    <>
-                      <Paper
-                        elevation={3}
-                        className={classes.paper}
-                        style={{ minWidth: "120px" }}
-                      >
-                        <Typography
-                          variant="body1"
-                          className={`${isLoading} ? boxGraySmall : ""`}
-                        ></Typography>
-                      </Paper>
-                      <br />
-                    </>
-                  ))
-                : recipeInstructions.length > 0
-                ? recipeInstructions.map((element, idx) => (
-                    <>
-                      <a
-                        onClick={() => setNumPicked(idx)}
-                        href={`#${idx}`}
-                        style={{ textDecoration: "none", maxHeight: "100px" }}
-                        className="steps_div_a"
-                      >
-                        <Paper key={idx}>
-                          <Typography
-                            variant="h6"
-                            className={`${classes.paper} ${
-                              numPicked === idx ? "active" : ""
-                            }`}
-                            onClick={(e) => console.log(e.target.className)}
-                          >
-                            Step {idx + 1}
-                          </Typography>
-                        </Paper>
-                      </a>
-                      <br />
-                    </>
-                  ))
-                : null}
-            </div>
-          </div>
-
           {/*<b> summary </b> : {recipeInfo.summary}*/}
 
-          {/*Ignore for now*/}
           <div>
-            comment section:
+            <Typography variant="h5"> Share your thoughts </Typography>
             <div className="container">
               {!user?.email ? (
                 <div className="comment-box">
@@ -475,9 +341,13 @@ export default function IndividualRecipe({ user }) {
                   <div className="header">
                     <div className="user">
                       <img
-                        src="https://i.imgur.com/hepj9ZS.png"
+                        src={
+                          userProfileImg
+                            ? userProfileImg
+                            : "https://i.imgur.com/hepj9ZS.png"
+                        }
                         alt="User avatar"
-                        style={{ maxHeight: "30px" }}
+                        style={{ maxHeight: "30px", maxWidth: "30px" }}
                       />
                       <div className="user_info">
                         {user?.email ? (
@@ -518,11 +388,13 @@ export default function IndividualRecipe({ user }) {
               )}
             </div>
             <div>
-              {curComments.length} comment
-              {curComments.length !== 1 ? "s" : ""}{" "}
+              <Typography variant="h6">
+                {curComments.length} comment
+                {curComments.length !== 1 ? "s" : ""}{" "}
+              </Typography>
             </div>
             {curComments.length === 0 ? (
-              <div> Be the first to comment </div>
+              <Typography variant="h6"> Be the first to comment </Typography>
             ) : (
               <> </>
             )}
@@ -543,6 +415,6 @@ export default function IndividualRecipe({ user }) {
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }

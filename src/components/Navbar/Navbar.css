@@ -87,7 +87,7 @@
     margin: 0 40px;
   }
   .phone-view {
-    display: none;
+    display: none !important;
   }
   .phone-view-search {
     width: 100%;

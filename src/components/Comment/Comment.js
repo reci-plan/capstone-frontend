@@ -40,6 +40,7 @@ export default function Comment({
     const [open, setOpen] = useState(false);
 
     const [authorOfComment, setAuthorOfComment] = useState("");
+    const [userProfileImg, setUserProfileImg] = useState("");
 
     const classes = useStyles();
 
@@ -76,7 +77,7 @@ export default function Comment({
             }
         };
         checkAuthorOfComment();
-    }, []);
+    }, [comment]);
 
     // For deleting a comment.
     const handleDelete = async (e, comment) => {
@@ -152,6 +153,22 @@ export default function Comment({
             alert(error);
         }
     };
+
+    useEffect(() => {
+        const fetchUserProfile = async () => {
+            const { data, error } = await apiClient.getProfileFromUserId(
+                comment.user_id
+            );
+            if (data) {
+                setUserProfileImg(data.image_url);
+            }
+            if (error) {
+                alert(error);
+            }
+        };
+        fetchUserProfile();
+    }, [comment.user_id]);
+
     return (
         <div>
             {/*   comment: {comment?.comment}, date: {comment?.date}, user id:
@@ -163,8 +180,12 @@ export default function Comment({
                     <div className="comment_headers">
                         <div className="comment_flex">
                             <img
-                                src="https://i.imgur.com/hepj9ZS.png"
-                                alt="User avatar"
+                                src={
+                                    userProfileImg
+                                        ? userProfileImg
+                                        : "https://i.imgur.com/hepj9ZS.png"
+                                }
+                                style={{ height: "30px", width: "30px" }}
                             />
                             <h3 className="comment_flex_h3">
                                 <b>
@@ -172,12 +193,18 @@ export default function Comment({
                                         style={{ textDecoration: "none" }}
                                         to={`/publicProfile/${comment.user_id}`}
                                     >
-                                        {authorOfComment}.
+                                        <span className="authorOfComment">
+                                            {" "}
+                                            {authorOfComment}.{" "}
+                                        </span>
                                     </Link>
                                 </b>
                             </h3>
                             <div style={{ color: "#B8B7B4" }}>
-                                {moment(comment.date).fromNow()}{" "}
+                                <span className="comment_date">
+                                    {" "}
+                                    {moment(comment.date).fromNow()}{" "}
+                                </span>
                             </div>
                         </div>
                         <div className="comment_flex_menu">
@@ -212,7 +239,7 @@ export default function Comment({
                                             horizontal: "left",
                                         }}
                                     >
-                                        <MenuItem
+                                       {/* <MenuItem
                                             key={"edit"}
                                             onClick={(e, c) =>
                                                 handleShowEdit(e, comment)
@@ -222,7 +249,7 @@ export default function Comment({
                                             comment.id === selectedCommentId
                                                 ? "Unedit"
                                                 : "Edit"}
-                                        </MenuItem>
+                                        </MenuItem>*/}
                                         <MenuItem
                                             key={"delete"}
                                             onClick={() => setOpen(true)}
@@ -249,45 +276,7 @@ export default function Comment({
                         {comment?.comment}
                     </div>
 
-                    {/*<div
-                        className="comment_footer"
-                        style={{ marginRight: "20px" }}
-                    >
-                        {user.id === comment.user_id ? (
-                            <>
-                                <button
-                                    className="btnStyle"
-                                    id="deleteBtn"
-                                    onClick={(e) => handleDelete(e, comment)}
-                                >
-                                    Delete
-                                </button>
-                                <button
-                                    className="btnStyle"
-                                    id="editBtn"
-                                    onClick={(e, c) =>
-                                        handleShowEdit(e, comment)
-                                    }
-                                >
-                                    {showEdit &&
-                                    comment.id === selectedCommentId
-                                        ? "Unedit"
-                                        : "Edit"}
-                                </button>
-                            </>
-                        ) : (
-                            <> </>
-                        )}
-                    </div>*/}
-
-                    {/*{
-    alreadyLiked ? (
-        <button onClick={(e, c) => handleLike(e, comment)}>downvote</button>
-    ) : (
-        <button onClick={(e, c) => handleLike(e, comment)}>like</button>
-    );
-}*/}
-                    {showEdit && comment.id === selectedCommentId ? (
+              {/*      {showEdit && comment.id === selectedCommentId ? (
                         <form
                             onSubmit={(e, commentParameter) =>
                                 handleEditSubmit(e, comment)
@@ -304,7 +293,7 @@ export default function Comment({
                         </form>
                     ) : (
                         <> </>
-                    )}
+                    )}*/}
                 </div>
             </div>
         </div>
